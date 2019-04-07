@@ -29,7 +29,7 @@ queue_t *q_new()
     if (q == NULL)
         return NULL;
 
-    q->head = q->tail = NULL;
+    INIT_LIST_HEAD(&q->head);
     q->size = 0;
     return q;
 }
@@ -41,13 +41,13 @@ void q_free(queue_t *q)
     /* Free queue structure */
     if (q == NULL)
         return;
+    list_ele_t *entry, *safe;
 
-    list_ele_t *next = q->head;
-    while (q->head != NULL) {
-        free(q->head->value);
-        next = q->head->next;
-        free(q->head);
-        q->head = next;
+    list_for_each_entry_safe(entry, safe, &q->head, list)
+    {
+        free(entry->value);
+        list_del(&entry->list);
+        free(entry);
     }
     free(q);
 }
@@ -78,15 +78,10 @@ bool q_insert_head(queue_t *q, char *s)
     }
 
     strcpy(t, s);
-
-    newh->next = q->head;
     newh->value = t;
-    q->head = newh;
+
+    list_add(&newh->list, &q->head);
     q->size++;
-
-    if (q->tail == NULL)
-        q->tail = newh;
-
     return true;
 }
 
@@ -115,14 +110,8 @@ bool q_insert_tail(queue_t *q, char *s)
     }
     strcpy(t, s);
     newh->value = t;
-    newh->next = NULL;
 
-    if (q->tail != NULL)
-        q->tail->next = newh;
-    else
-        q->head = newh;
-
-    q->tail = newh;
+    list_add_tail(&newh->list, &q->head);
     q->size++;
     return true;
 }
@@ -137,24 +126,19 @@ bool q_insert_tail(queue_t *q, char *s)
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
     /* You need to fix up this code. */
-    if (q == NULL || q->head == NULL)
+    if (q == NULL || q->size == 0)
         return false;
 
-    list_ele_t *node = q->head;
-    q->head = q->head->next;
+    list_ele_t *node = list_first_entry(&q->head, list_ele_t, list);
+    list_del(&node->list);
 
     if (sp != NULL) {
         strncpy(sp, node->value, bufsize - 1);
         sp[bufsize - 1] = '\0';
     }
-
     free(node->value);
     free(node);
-
-
-    if (--q->size == 0)
-        q->tail = NULL;
-
+    q->size--;
     return true;
 }
 
@@ -178,20 +162,16 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    if (q == NULL || q->head == NULL)
+    if (q == NULL || q->size == 0)
         return;
 
-    list_ele_t *prev_node, *cur_node, *next_node;
-    prev_node = NULL;
-    cur_node = next_node = q->head;
-    q->tail = q->head;
-
-    do {
-        next_node = cur_node->next;
-        cur_node->next = prev_node;
-        prev_node = cur_node;
-        cur_node = next_node;
-    } while (cur_node != NULL);
-    q->head = prev_node;
+    list_ele_t *entry, *safe;
+    list_for_each_entry_safe(entry, safe, &q->head, list)
+    {
+        entry->list.next = entry->list.prev;
+        entry->list.prev = &safe->list;
+    }
     /* You need to write the code for this function */
+    q->head.next = q->head.prev;
+    q->head.prev = &safe->list;
 }
