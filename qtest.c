@@ -62,6 +62,7 @@ bool do_remove_head_quiet(int argc, char *argv[]);
 bool do_reverse(int argc, char *argv[]);
 bool do_size(int argc, char *argv[]);
 bool do_show(int argc, char *argv[]);
+bool do_sort(int argc, char *argv[]);
 
 static void queue_init();
 
@@ -84,6 +85,7 @@ static void console_init()
     add_cmd("reverse", do_reverse, "                | Reverse queue");
     add_cmd("size", do_size,
             " [n]            | Compute queue size n times (default: n == 1)");
+    add_cmd("sort", do_sort, "   | Sort");
     add_cmd("show", do_show, "                | Show queue contents");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
@@ -432,7 +434,15 @@ bool do_size(int argc, char *argv[])
 
     return ok && !error_check();
 }
+bool do_sort(int argc, char *argv[])
+{
+    if (q == NULL)
+        return false;
 
+    sort(q);
+    show_queue(3);
+    return true;
+}
 static bool show_queue(int vlevel)
 {
     bool ok = true;

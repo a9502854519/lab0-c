@@ -90,3 +90,8 @@ int q_size(queue_t *q);
   It should rearrange the existing ones.
  */
 void q_reverse(queue_t *q);
+/*
+ * merge sort
+ */
+void sort(queue_t *q);
+void merge_sort(struct list_head *head, int size);

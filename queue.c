@@ -175,3 +175,54 @@ void q_reverse(queue_t *q)
     q->head.next = q->head.prev;
     q->head.prev = &safe->list;
 }
+
+/*
+ * merge sort
+ */
+bool compare(char *s, char *t)
+{
+    int i;
+    for (i = 0; s[i] != '\0' && t[i] != '\0'; i++) {
+        if (s[i] != t[i])
+            break;
+    }
+    return s[i] <= t[i];
+}
+void sort(queue_t *q)
+{
+    merge_sort(&q->head, q->size);
+}
+void merge_sort(struct list_head *head, int size)
+{
+    if (size == 1) {  // only one element left
+        return;
+    }
+    struct list_head *left, *right;
+    struct list_head *node = head;
+
+    left = malloc(sizeof(struct list_head));
+    right = malloc(sizeof(struct list_head));
+    // find the cutting point
+    for (int i = 0; i < size / 2; i++)
+        node = node->next;
+
+    list_cut_position(left, head, node);
+    list_cut_position(right, head, head->prev);
+
+    merge_sort(left, size / 2);
+    merge_sort(right, size - size / 2);
+
+    // merge
+    INIT_LIST_HEAD(head);
+    list_ele_t *a, *b;
+    while (!list_empty(left) && !list_empty(right)) {
+        a = list_first_entry(left, list_ele_t, list);
+        b = list_first_entry(right, list_ele_t, list);
+
+        node = compare(a->value, b->value) ? left->next : right->next;
+        list_del(node);
+        list_add_tail(node, head);
+    }
+    list_splice_tail(left, head);
+    list_splice_tail(right, head);
+}
